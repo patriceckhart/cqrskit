@@ -1,0 +1,46 @@
+{
+  "name": "cqrskit",
+  "version": "0.0.1",
+  "description": "A lightweight TypeScript CQRS and Event Sourcing framework with pluggable database adapters",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:integration": "node --import tsx --test test/GenesisDBAdapter.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cqrs",
+    "event-sourcing",
+    "ddd",
+    "domain-driven-design",
+    "typescript",
+    "genesisdb"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "genesisdb": "^1.0.0",
+    "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "genesisdb": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "genesisdb": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}
