@@ -633,7 +633,7 @@ Contributions welcome! Please open an issue or PR.
 
 ## Related Projects
 
-- [Genesis DB](https://genesisdb.io) - Cloud-native event store
+- [Genesis DB](https://genesisdb.io): Genesis DB - The GDPR-ready event sourcing database
 
 ## License
 
