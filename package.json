@@ -1,6 +1,6 @@
 {
   "name": "cqrskit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A lightweight TypeScript CQRS and Event Sourcing framework with pluggable database adapters",
   "repository": {
     "type": "git",
