@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact stable version (optional)
+        required: false
+        type: string
+      bump:
+        description: Version bump (next rolls patch and minor at 99)
+        default: next
+        type: choice
+        options: [next, patch, minor, major]
+      npm_tag:
+        description: npm dist-tag
+        default: latest
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'release v'))
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Audit dependencies
+        run: npm audit
+
+      - name: Resolve release version
+        id: version
+        run: node scripts/release-version.cjs
+        env:
+          REQUESTED_VERSION: ${{ inputs.version || '' }}
+          BUMP: ${{ inputs.bump || 'next' }}
+
+      - name: Update package version
+        run: npm version "$RELEASE_VERSION" --no-git-tag-version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit and dependency compatibility tests
+        run: npm run test:unit
+
+      - name: Check package contents
+        run: npm pack --dry-run
+
+      - name: Commit and tag release
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json dist
+          git commit -m "release $RELEASE_TAG"
+          git tag "$RELEASE_TAG"
+          git push --dry-run --atomic origin HEAD:main "$RELEASE_TAG"
+
+      - name: Publish to npm
+        run: npm publish --access public --tag "$NPM_TAG" --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TAG: ${{ inputs.npm_tag || 'latest' }}
+
+      - name: Push release commit and tag
+        run: git push --atomic origin HEAD:main "$RELEASE_TAG"
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+
+      - name: Create GitHub release
+        run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}

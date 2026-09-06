@@ -15,6 +15,14 @@ A lightweight TypeScript CQRS (Command Query Responsibility Segregation) and Eve
 - **Testing Utilities** - Fluent Given-When-Then API for testing command handlers
 - **Zero Dependencies** (except database adapters)
 
+## Releases
+
+The GitHub Actions **Release** workflow publishes to npm on pushes to `main` or manual runs, using the repository secret `NPM_TOKEN`. It audits dependencies, builds, tests version rules and dependency compatibility, checks package contents, publishes with provenance, then pushes the release commit and tag and creates a GitHub release.
+
+Versions increment from the highest stable version in package metadata or `v*` git tags. The default `next` bump rolls patch and minor at 99: `0.0.99` becomes `0.1.0`, and `0.99.99` becomes `1.0.0`. Manual runs support an exact higher stable version, standard patch/minor/major bumps, and a custom npm dist-tag.
+
+`NPM_TOKEN` must have publish access to `cqrskit` and permit publishing without interactive 2FA. Branch protection must allow the release bot to push commits and tags. GenesisDB integration tests are not run by this workflow because they require an external database.
+
 ## Installation
 
 ```bash
@@ -25,6 +33,26 @@ For Genesis DB support:
 ```bash
 npm install cqrskit genesisdb
 ```
+
+### Dependency security
+
+CloudEvents, used by GenesisDB, currently requests UUID 8, which is affected by GHSA-w5hq-g745-h8pq. This repository overrides that dependency to UUID `^11.1.1`, which retains CommonJS support. Compatibility tests cover UUID generation, CloudEvents validation and serialization, and GenesisDB stream parsing. The lockfile also includes patched AJV and fast-uri versions.
+
+npm only applies overrides from the root project. **Consumers must add this to their own application's `package.json`** until the upstream dependency is fixed:
+
+```json
+{
+  "overrides": {
+    "cloudevents": {
+      "uuid": "^11.1.1"
+    }
+  }
+}
+```
+
+Then run `npm install` and `npm audit`. Existing application lockfiles may also need `npm audit fix` to update AJV and fast-uri. Publishing this library does not automatically fix consumer dependency trees.
+
+For local checks, run `npm ci --ignore-scripts`, `npm run build`, `npm run test:unit`, and `npm audit`. Live database tests remain available through `npm run test:integration` and require GenesisDB on localhost:8080.
 
 ## Key Concepts & Terminology
 
